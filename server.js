@@ -21,7 +21,7 @@ app.get("/",(req,res)=>{
     res.send("Digital Menu Backend is running");
 });
 app.use("/api/auth",authRoutes);
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 db.connect((error) => {
   if (error) {
     console.log("Database connection failed");
