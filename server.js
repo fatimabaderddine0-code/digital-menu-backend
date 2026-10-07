@@ -24,7 +24,7 @@ app.use("/api/auth",authRoutes);
 const PORT = process.env.PORT || 5000;
 db.connect((error) => {
   if (error) {
-    console.log("Database connection failed");
+    console.log("Database connection failed:",error);
   } else {
     console.log("Connected to MySQL database");
   }
