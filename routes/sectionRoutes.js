@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../config/db");
 const verifyToken = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
+const imagekit = require("../config/imagekit");
 router.get("/", (req, res) => {
   db.query("SELECT * FROM site_sections", (error, results) => {
     if (error) {
@@ -18,42 +19,53 @@ router.put(
   "/:id",
   verifyToken,
   upload.single("image"),
-  (req, res) => {
+  async (req, res) => {
     const id = req.params.id;
 
-    const image = req.file
-      ? req.file.filename
-      : null;
-
-    if (!image) {
+    if (!req.file) {
       return res.status(400).json({
         message: "Image is required",
       });
     }
 
-    db.query(
-      "UPDATE site_sections SET image = ? WHERE id = ?",
-      [image, id],
-      (error, results) => {
-        if (error) {
-          return res.status(500).json({
-            message: "Database error",
+    try {
+      const uploadResult = await imagekit.upload({
+        file: req.file.buffer,
+        fileName: req.file.originalname,
+        folder: "/site-sections",
+      });
+
+      const imageUrl = uploadResult.url;
+
+      db.query(
+        "UPDATE site_sections SET image = ? WHERE id = ?",
+        [imageUrl, id],
+        (error, results) => {
+          if (error) {
+            return res.status(500).json({
+              message: "Database error",
+            });
+          }
+
+          if (results.affectedRows === 0) {
+            return res.status(404).json({
+              message: "Section not found",
+            });
+          }
+
+          res.json({
+            message: "Section image updated successfully",
+            image: imageUrl,
           });
         }
+      );
+    } catch (error) {
+      console.log("Section image upload error:", error);
 
-        if (results.affectedRows === 0) {
-          return res.status(404).json({
-            message: "Section not found",
-          });
-        }
-
-        res.json({
-          message: "Section image updated successfully",
-          image: image,
-        });
-      }
-    );
+      res.status(500).json({
+        message: "Image upload failed",
+      });
+    }
   }
 );
-
 module.exports = router;
