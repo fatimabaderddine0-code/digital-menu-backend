@@ -161,6 +161,82 @@ router.post(
     }
   }
 );
+router.put(
+  "/:id",
+  verifyToken,
+  upload.single("image"),
+  async (req, res) => {
+    const id = req.params.id;
+    const { name, description, price, category_id } = req.body;
+
+    if (!name || !price || !category_id) {
+      return res.status(400).json({
+        message: "Name, price, and category are required",
+      });
+    }
+
+    if (isNaN(price) || Number(price) <= 0) {
+      return res.status(400).json({
+        message: "Price must be a positive number",
+      });
+    }
+
+    try {
+      let imageUrl = null;
+
+      if (req.file) {
+        const uploadResult = await imagekit.upload({
+          file: req.file.buffer,
+          fileName: req.file.originalname,
+          folder: "/digital-menu",
+        });
+
+        imageUrl = uploadResult.url;
+      }
+
+      db.query(
+        `UPDATE menu_items
+         SET name = ?,
+             description = ?,
+             price = ?,
+             category_id = ?,
+             image = COALESCE(?, image)
+         WHERE id = ?`,
+        [
+          name,
+          description,
+          price,
+          category_id,
+          imageUrl,
+          id,
+        ],
+        (error, results) => {
+          if (error) {
+            return res.status(500).json({
+              message: "Database error",
+            });
+          }
+
+          if (results.affectedRows === 0) {
+            return res.status(404).json({
+              message: "Menu item not found",
+            });
+          }
+
+          res.json({
+            message: "Menu item updated successfully",
+          });
+        }
+      );
+    } catch (error) {
+      console.log("Image upload error:", error);
+
+      res.status(500).json({
+        message: "Image upload failed",
+      });
+    }
+  }
+);
 router.delete("/:id",verifyToken, (req, res) => {
   const id = req.params.id;
 
