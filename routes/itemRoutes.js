@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
 
 const db = require("../config/db");
 const upload = require("../middleware/uploadMiddleware");
@@ -37,6 +38,28 @@ router.get("/", (req, res) => {
 });
 
 
+// HELPER FUNCTION FOR IMAGEKIT
+const uploadToImageKit = async (file) => {
+  let fileData;
+
+  if (file.buffer) {
+    fileData = file.buffer;
+  } else if (file.path) {
+    fileData = fs.readFileSync(file.path);
+  } else {
+    throw new Error("Uploaded file data not found");
+  }
+
+  const uploadResult = await imagekit.upload({
+    file: fileData,
+    fileName: file.originalname,
+    folder: "/digital-menu",
+  });
+
+  return uploadResult.url;
+};
+
+
 // CREATE PRODUCT
 router.post(
   "/",
@@ -61,13 +84,7 @@ router.post(
       let imageUrl = null;
 
       if (req.file) {
-        const uploadResult = await imagekit.upload({
-          file: req.file.buffer.toString("base64"),
-          fileName: req.file.originalname,
-          folder: "/digital-menu",
-        });
-
-        imageUrl = uploadResult.url;
+        imageUrl = await uploadToImageKit(req.file);
       }
 
       db.query(
@@ -137,13 +154,7 @@ router.put(
       let imageUrl = null;
 
       if (req.file) {
-        const uploadResult = await imagekit.upload({
-          file: req.file.buffer.toString("base64"),
-          fileName: req.file.originalname,
-          folder: "/digital-menu",
-        });
-
-        imageUrl = uploadResult.url;
+        imageUrl = await uploadToImageKit(req.file);
       }
 
       db.query(
