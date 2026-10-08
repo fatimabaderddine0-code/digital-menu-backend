@@ -229,12 +229,13 @@ router.put(
         }
       );
     } catch (error) {
-      console.log("Image upload error:", error);
+  console.log("Image upload error:", error);
 
-      res.status(500).json({
-        message: "Image upload failed",
-      });
-    }
+  res.status(500).json({
+    message: "Image upload failed",
+    error: error.message,
+  });
+}
   }
 );
 router.delete("/:id",verifyToken, (req, res) => {
