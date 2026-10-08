@@ -5,10 +5,12 @@ const app = express();
 const categoryRoutes = require("./routes/categoryRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const authRoutes = require("./routes/authRoutes");
+const sectionRoutes = require("./routes/sectionRoutes");
 app.use(cors());
 app.use(express.json());
 app.use("/api/categories",categoryRoutes);
 app.use("/api/items",itemRoutes);
+app.use("/api/sections", sectionRoutes);
 app.use((error, req, res, next) => {
   console.log("SERVER ERROR:", error);
 
